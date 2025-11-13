@@ -1,0 +1,54 @@
+/**
+ * Toast 统一提示工具类
+ * 封装 promptAction.showToast，提供统一的消息提示接口
+ */
+import promptAction from '@ohos.promptAction';
+
+export class ToastUtil {
+  private static readonly DURATION: number = 2000;
+  private static readonly BOTTOM_OFFSET: number = 80;
+
+  /**
+   * 显示成功提示
+   */
+  static showSuccess(message: string): void {
+    promptAction.showToast({
+      message: message,
+      duration: ToastUtil.DURATION,
+      bottom: ToastUtil.BOTTOM_OFFSET
+    });
+  }
+
+  /**
+   * 显示错误提示
+   */
+  static showError(message: string): void {
+    promptAction.showToast({
+      message: '❌ ' + message,
+      duration: ToastUtil.DURATION,
+      bottom: ToastUtil.BOTTOM_OFFSET
+    });
+  }
+
+  /**
+   * 显示警告提示
+   */
+  static showWarning(message: string): void {
+    promptAction.showToast({
+      message: '⚠️ ' + message,
+      duration: ToastUtil.DURATION,
+      bottom: ToastUtil.BOTTOM_OFFSET
+    });
+  }
+
+  /**
+   * 显示信息提示
+   */
+  static showInfo(message: string): void {
+    promptAction.showToast({
+      message: 'ℹ️ ' + message,
+      duration: ToastUtil.DURATION,
+      bottom: ToastUtil.BOTTOM_OFFSET
+    });
+  }
+}

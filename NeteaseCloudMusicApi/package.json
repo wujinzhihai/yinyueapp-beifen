@@ -1,0 +1,14 @@
+﻿{
+  "name": "netease-music-api",
+  "version": "1.0.0",
+  "description": "网易云音乐API精简版",
+  "main": "music-api.js",
+  "scripts": {
+    "start": "node music-api.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "axios": "^1.6.0",
+    "crypto-js": "^4.2.0"
+  }
+}
