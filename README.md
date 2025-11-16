@@ -87,6 +87,28 @@ yinyueapp-beifen/
 └── README.md
 ```
 
+## 📥 下载安装
+
+### 方式1: 下载HAP安装包(推荐)
+
+**适用用户**: 所有鸿蒙手机用户
+
+1. **下载HAP文件**
+   - [GitHub Releases 下载](https://github.com/wujinzhihai/yinyueapp-beifen/releases/latest)
+   - 下载文件: `yinyue-app-v1.0.0.hap`
+
+2. **安装应用**
+   - 在手机上找到下载的HAP文件
+   - 点击安装即可
+
+3. **详细安装说明**
+   - 查看完整教程: [INSTALL.md](INSTALL.md)
+   - 包含常见问题解答
+
+### 方式2: 开发者安装
+
+**适用用户**: 开发者,想要自己编译
+
 ## 🚀 快速开始
 
 ### 环境要求
@@ -184,16 +206,6 @@ cd yinyueapp-beifen
 ## 📄 开源协议
 
 本项目采用 [MIT](LICENSE) 协议开源。
-
-## 🤝 贡献指南
-
-欢迎提交 Issue 和 Pull Request！
-
-1. Fork 本项目
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 提交 Pull Request
 
 ## 📮 联系方式
 
