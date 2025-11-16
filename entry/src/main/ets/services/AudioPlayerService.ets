@@ -1,3 +1,14 @@
+/**
+ * 🎵 音频播放服务
+ *
+ * 功能: 管理音乐播放的核心服务
+ * - 单例模式,全局唯一播放器实例
+ * - 播放/暂停/上一曲/下一曲控制
+ * - 播放失败自动重试和跳过
+ * - 状态管理和AppStorage同步
+ * - 订阅/取消订阅机制
+ */
+
 import media from '@ohos.multimedia.media';
 import MusicApiService from './MusicApiService';
 import { MusicItem, PlayState, PlayMode } from '../models/MusicModels';
@@ -32,6 +43,8 @@ class AudioPlayerService {
   private updateTimer: number = -1;
   private quality: number = 320;
   private isPlayingLock: boolean = false; // 🔒 播放锁，防止重复切歌
+  private retryCount: number = 0; // 🔄 重试计数器
+  private maxRetries: number = 1; // 🔄 最大重试次数
 
   private constructor() {}
 
@@ -84,16 +97,21 @@ class AudioPlayerService {
   }
 
   /**
-   * 🔥 核心修复：播放歌曲（带播放锁保护）
+   * 🔥 核心修复：播放歌曲（带播放锁保护和重试机制）
    */
-  async play(song: MusicItem, playlist: MusicItem[], index: number): Promise<void> {
+  async play(song: MusicItem, playlist: MusicItem[], index: number, isRetry: boolean = false): Promise<void> {
     // 🔒 检查播放锁，防止重复切歌
     if (this.isPlayingLock) {
       console.warn('[AudioPlayer] 正在切歌中，忽略重复请求');
       return;
     }
 
-    console.info('[AudioPlayer] 开始播放:', song.name);
+    // 🔄 如果不是重试,重置重试计数器
+    if (!isRetry) {
+      this.retryCount = 0;
+    }
+
+    console.info('[AudioPlayer] 开始播放:', song.name, isRetry ? `(重试 ${this.retryCount + 1}/${this.maxRetries})` : '');
 
     // 🔒 上锁
     this.isPlayingLock = true;
@@ -112,16 +130,52 @@ class AudioPlayerService {
 
       this.state.playState = PlayState.PLAYING;
       this.notifyListeners();
+      
+      // 🔄 播放成功,重置重试计数器
+      this.retryCount = 0;
 
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
       console.error('[AudioPlayer] 播放失败:', error.message);
       this.state.playState = PlayState.ERROR;
       this.notifyListeners();
-      throw error;
+      
+      // 🔄 处理播放失败
+      await this.handlePlayError(song, playlist, index);
     } finally {
       // 🔓 解锁
       this.isPlayingLock = false;
+    }
+  }
+
+  /**
+   * 🔄 处理播放失败：重试或跳过
+   */
+  private async handlePlayError(song: MusicItem, playlist: MusicItem[], index: number): Promise<void> {
+    // 🔄 检查是否可以重试
+    if (this.retryCount < this.maxRetries) {
+      this.retryCount++;
+      console.warn(`[AudioPlayer] 播放失败，准备重试 (${this.retryCount}/${this.maxRetries})`);
+      
+      // 延迟1秒后重试
+      await new Promise<void>((resolve: (value: void) => void) => setTimeout(resolve, 1000));
+      
+      try {
+        await this.play(song, playlist, index, true);
+      } catch (error) {
+        console.error('[AudioPlayer] 重试失败:', error);
+      }
+    } else {
+      // 🔄 重试次数用完,自动播放下一曲
+      console.warn('[AudioPlayer] 重试次数已用完，自动播放下一曲');
+      this.retryCount = 0; // 重置计数器
+      
+      // 延迟1秒后播放下一曲
+      setTimeout(() => {
+        this.next().catch((error: Error) => {
+          console.error('[AudioPlayer] 自动播放下一曲失败:', error);
+        });
+      }, 1000);
     }
   }
 

@@ -1,3 +1,15 @@
+/**
+ * 🌐 音乐API服务
+ *
+ * 功能: 封装音乐API调用
+ * - 搜索歌曲
+ * - 获取音乐播放URL
+ * - 获取歌词
+ * - 获取封面图片
+ * - 智能缓存策略(分类缓存+自动过期)
+ * - API频率限流(5分钟60次)
+ */
+
 import http from '@ohos.net.http';
 import { MusicItem } from '../models/MusicModels';
 

@@ -1,3 +1,15 @@
+/**
+ * 🎵 播放器页面
+ *
+ * 功能: 完整的音乐播放页面
+ * - 显示封面(带旋转动画)
+ * - 显示歌词(实时高亮滚动)
+ * - 播放控制(播放/暂停/上一曲/下一曲)
+ * - 进度条拖动
+ * - 音质切换
+ * - 播放列表显示
+ */
+
 import MusicApiService, { MusicItem } from '../services/MusicApiService';
 import AudioPlayerService, { PlayState } from '../services/AudioPlayerService';
 import { LyricParser, LyricLine } from '../utils/LyricParser';

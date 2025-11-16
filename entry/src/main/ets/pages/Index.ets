@@ -1,3 +1,14 @@
+/**
+ * 🏠 首页
+ *
+ * 功能: 应用主页
+ * - 搜索歌曲(带防抖优化)
+ * - 显示推荐歌单
+ * - 显示搜索结果列表
+ * - 底部迷你播放器
+ * - 点击歌曲播放
+ */
+
 import { MusicItem } from '../services/MusicApiService';
 import AudioPlayerService, { PlayState } from '../services/AudioPlayerService';
 import MusicApiService from '../services/MusicApiService';

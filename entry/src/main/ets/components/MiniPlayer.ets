@@ -1,3 +1,13 @@
+/**
+ * 🎵 迷你播放器组件
+ *
+ * 功能: 底部迷你播放器
+ * - 显示当前播放歌曲信息
+ * - 显示封面图片(带旋转动画)
+ * - 播放/暂停控制
+ * - 点击跳转到完整播放页面
+ */
+
 import { MusicItem } from '../models/MusicModels';
 import MusicApiService from '../services/MusicApiService';
 import AudioPlayerService, { PlayState } from '../services/AudioPlayerService';
