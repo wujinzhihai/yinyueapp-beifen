@@ -31,7 +31,7 @@
 - 📺 如遇问题可 B站私信：**GD-Studio**
 - ⚠️ 请尊重作者的劳动成果，合理使用
 
-### AI工具使用步骤
+### AI工具使用
 - 1.使用Visual Studio Code拓展市场搜索并安装“Roo Code”
 - 2.Roo Code使用“Base URL” (基础 URL) 选项
 - 3.此URL服务来自 **[LINUX DO](https://linux.do/latest)** 感谢其大力支持
