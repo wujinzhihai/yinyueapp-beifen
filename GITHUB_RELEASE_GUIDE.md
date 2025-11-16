@@ -38,7 +38,7 @@ To https://github.com/wujinzhihai/yinyueapp-beifen.git
 
 1. **打开项目**
    - 启动DevEco Studio
-   - 打开项目: `d:/Ahmxt/yinyueapp-beifen`
+   - 打开项目根目录
 
 2. **构建HAP**
    - 菜单: `Build` → `Build Hap(s)/APP(s)` → `Build Hap(s)`
