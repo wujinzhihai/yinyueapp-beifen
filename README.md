@@ -31,6 +31,11 @@
 - 📺 如遇问题可 B站私信：**GD-Studio**
 - ⚠️ 请尊重作者的劳动成果，合理使用
 
+### AI工具使用步骤
+1.使用Visual Studio Code拓展市场搜索并安装“Roo Code”
+2.Roo Code使用“Base URL” (基础 URL) 选项
+3.此URL服务来自 **[LINUX DO](https://linux.do/latest)** 感谢其大力支持
+
 ## ✨ 主要功能
 
 ### 🎼 音乐播放
@@ -62,7 +67,7 @@
 
 - **操作系统**：HarmonyOS NEXT
 - **编程语言**：ArkTS (TypeScript 的超集)
-- **开发工具**：DevEco Studio
+- **开发工具**：DevEco Studio  DevEco Studio
 - **架构模式**：MVVM
 - **状态管理**：AppStorage + @StorageLink
 - **网络请求**：@ohos.net.http
