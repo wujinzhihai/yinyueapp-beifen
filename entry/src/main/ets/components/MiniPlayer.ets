@@ -7,8 +7,12 @@ import router from '@ohos.router';
 export struct MiniPlayer {
   @Watch('onSongChange')
   @StorageLink('currentSong') currentSong: MusicItem | null = null;
+  @Watch('onPlayStateChange')
   @StorageLink('playState') playState: PlayState = PlayState.IDLE;
   @State coverUrl: string = '';
+  @State rotateAngle: number = 0;
+
+  private rotationTimer: number = -1;
 
   async onSongChange() {
     if (this.currentSong?.picId && this.currentSong?.source) {
@@ -25,9 +29,41 @@ export struct MiniPlayer {
     } else {
       this.coverUrl = '';
     }
+
+    // 切歌时继续保持旋转（如果正在播放）
+    if (this.playState === PlayState.PLAYING) {
+      this.startRotation();
+    }
   }
 
-  // 🔥 修复：使用实例方法
+  onPlayStateChange() {
+    if (this.playState === PlayState.PLAYING) {
+      this.startRotation();
+    } else {
+      this.stopRotation();
+    }
+  }
+
+  startRotation() {
+    if (this.rotationTimer !== -1) {
+      return; // 已在旋转
+    }
+
+    this.rotationTimer = setInterval(() => {
+      this.rotateAngle += 2;
+      if (this.rotateAngle >= 360) {
+        this.rotateAngle -= 360;
+      }
+    }, 16);
+  }
+
+  stopRotation() {
+    if (this.rotationTimer !== -1) {
+      clearInterval(this.rotationTimer);
+      this.rotationTimer = -1;
+    }
+  }
+
   togglePlay() {
     AudioPlayerService.getInstance().togglePlay();
   }
@@ -42,16 +78,29 @@ export struct MiniPlayer {
     }
   }
 
+  aboutToDisappear() {
+    this.stopRotation();
+  }
+
   build() {
     if (this.currentSong) {
       Row() {
-        // 封面
+        // 封面 - 圆形持续旋转
         if (this.coverUrl) {
           Image(this.coverUrl)
             .width(50)
             .height(50)
-            .borderRadius(8)
+            .borderRadius(25)
             .backgroundColor('#F0F0F0')
+            .rotate({
+              x: 0,
+              y: 0,
+              z: 1,
+              angle: this.rotateAngle
+            })
+            .onClick(() => {
+              this.openPlayerPage();
+            })
         } else {
           Column() {
             Text('🎵')
@@ -60,15 +109,24 @@ export struct MiniPlayer {
           }
           .width(50)
           .height(50)
-          .borderRadius(8)
+          .borderRadius(25)
           .backgroundColor('#F0F0F0')
           .justifyContent(FlexAlign.Center)
+          .rotate({
+            x: 0,
+            y: 0,
+            z: 1,
+            angle: this.rotateAngle
+          })
+          .onClick(() => {
+            this.openPlayerPage();
+          })
         }
 
         // 歌曲信息
         Column() {
           Text(this.currentSong.name)
-            .fontSize(14)
+            .fontSize(15)
             .fontWeight(FontWeight.Medium)
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
@@ -79,7 +137,7 @@ export struct MiniPlayer {
             .fontColor('#999999')
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
-            .margin({ top: 2 })
+            .margin({ top: 4 })
             .width('100%')
         }
         .layoutWeight(1)
@@ -89,14 +147,14 @@ export struct MiniPlayer {
           this.openPlayerPage();
         })
 
-        // 播放按钮
+        // 播放/暂停按钮
         Button({ type: ButtonType.Circle }) {
           Text(this.playState === PlayState.PLAYING ? '⏸' : '▶')
             .fontSize(20)
             .fontColor('#FFFFFF')
         }
-        .width(40)
-        .height(40)
+        .width(44)
+        .height(44)
         .backgroundColor('#FF6B6B')
         .onClick(() => {
           this.togglePlay();
@@ -106,7 +164,15 @@ export struct MiniPlayer {
       .height(70)
       .padding({ left: 16, right: 16 })
       .backgroundColor('#FFFFFF')
-      .shadow({ radius: 8, color: '#1A000000', offsetY: -2 })
+      .shadow({
+        radius: 12,
+        color: '#1A000000',
+        offsetY: -4
+      })
+      .border({
+        width: { top: 1 },
+        color: '#F0F0F0'
+      })
     }
   }
 }

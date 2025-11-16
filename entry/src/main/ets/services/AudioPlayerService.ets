@@ -31,6 +31,7 @@ class AudioPlayerService {
   private listeners: StateListener[] = [];
   private updateTimer: number = -1;
   private quality: number = 320;
+  private isPlayingLock: boolean = false; // 🔒 播放锁，防止重复切歌
 
   private constructor() {}
 
@@ -41,28 +42,69 @@ class AudioPlayerService {
     return AudioPlayerService.instance;
   }
 
-  subscribe(listener: StateListener): void {
+  subscribe(listener: StateListener): () => void {
     this.listeners.push(listener);
     listener(this.state);
+    
+    // 🔥 返回取消订阅函数
+    return () => {
+      this.unsubscribe(listener);
+    };
+  }
+
+  unsubscribe(listener: StateListener): void {
+    const index = this.listeners.indexOf(listener);
+    if (index > -1) {
+      this.listeners.splice(index, 1);
+      console.info('[AudioPlayer] 移除监听器,剩余:', this.listeners.length);
+    }
   }
 
   private notifyListeners(): void {
-    this.listeners.forEach(listener => listener(this.state));
+    console.info('🔍 [AudioPlayer-Debug] 通知监听器，监听器数量:', this.listeners.length);
+    console.info('🔍 [AudioPlayer-Debug] 当前状态 - 歌曲:', this.state.currentSong?.name || 'null');
+    console.info('🔍 [AudioPlayer-Debug] 当前状态 - playState:', this.state.playState);
+    console.info('🔍 [AudioPlayer-Debug] 当前状态 - currentIndex:', this.state.currentIndex);
+    
+    // 🔥 核心修复：直接更新 AppStorage，确保UI组件响应状态变化
+    AppStorage.setOrCreate('currentSong', this.state.currentSong);
+    AppStorage.setOrCreate('playState', this.state.playState);
+    AppStorage.setOrCreate('currentTime', this.state.currentTime);
+    AppStorage.setOrCreate('duration', this.state.duration);
+    AppStorage.setOrCreate('playlist', this.state.playlist);
+    AppStorage.setOrCreate('currentIndex', this.state.currentIndex);
+    AppStorage.setOrCreate('playMode', this.state.playMode);
+    
+    console.info('✅ [AudioPlayer-Debug] AppStorage 已更新');
+    
+    this.listeners.forEach((listener, index) => {
+      console.info(`🔍 [AudioPlayer-Debug] 调用监听器 ${index + 1}`);
+      listener(this.state);
+    });
   }
 
   /**
-   * 🔥 核心修复：播放歌曲
+   * 🔥 核心修复：播放歌曲（带播放锁保护）
    */
   async play(song: MusicItem, playlist: MusicItem[], index: number): Promise<void> {
+    // 🔒 检查播放锁，防止重复切歌
+    if (this.isPlayingLock) {
+      console.warn('[AudioPlayer] 正在切歌中，忽略重复请求');
+      return;
+    }
+
     console.info('[AudioPlayer] 开始播放:', song.name);
 
-    this.state.playlist = playlist;
-    this.state.currentIndex = index;
-    this.state.currentSong = song;
-    this.state.playState = PlayState.LOADING;
-    this.notifyListeners();
+    // 🔒 上锁
+    this.isPlayingLock = true;
 
     try {
+      this.state.playlist = playlist;
+      this.state.currentIndex = index;
+      this.state.currentSong = song;
+      this.state.playState = PlayState.LOADING;
+      this.notifyListeners();
+
       const url = await MusicApiService.getMusicUrl(song.source, song.id, this.quality);
       console.info('[AudioPlayer] 获取音频URL成功');
 
@@ -77,6 +119,9 @@ class AudioPlayerService {
       this.state.playState = PlayState.ERROR;
       this.notifyListeners();
       throw error;
+    } finally {
+      // 🔓 解锁
+      this.isPlayingLock = false;
     }
   }
 
@@ -86,8 +131,20 @@ class AudioPlayerService {
   private async initPlayer(url: string): Promise<void> {
     // 释放旧播放器
     if (this.avPlayer) {
-      await this.avPlayer.release();
-      this.avPlayer = null;
+      try {
+        // 🔥 优化：先移除所有监听器，避免旧回调干扰
+        this.avPlayer.off('stateChange');
+        this.avPlayer.off('durationUpdate');
+        this.avPlayer.off('timeUpdate');
+        this.avPlayer.off('endOfStream');
+        this.avPlayer.off('error');
+
+        await this.avPlayer.release();
+      } catch (error) {
+        console.error('[AudioPlayer] 释放旧播放器失败:', error);
+      } finally {
+        this.avPlayer = null;
+      }
     }
 
     // 创建新播放器
@@ -204,22 +261,26 @@ class AudioPlayerService {
   }
 
   /**
-   * 上一曲
+   * 上一曲（异步方法，等待切歌完成）
    */
-  previous(): void {
+  async previous(): Promise<void> {
     if (this.state.currentIndex > 0) {
       const newIndex = this.state.currentIndex - 1;
-      this.play(this.state.playlist[newIndex], this.state.playlist, newIndex);
+      await this.play(this.state.playlist[newIndex], this.state.playlist, newIndex);
+    } else {
+      console.warn('[AudioPlayer] 已经是第一首歌');
     }
   }
 
   /**
-   * 下一曲
+   * 下一曲（异步方法，等待切歌完成）
    */
-  next(): void {
+  async next(): Promise<void> {
     if (this.state.currentIndex < this.state.playlist.length - 1) {
       const newIndex = this.state.currentIndex + 1;
-      this.play(this.state.playlist[newIndex], this.state.playlist, newIndex);
+      await this.play(this.state.playlist[newIndex], this.state.playlist, newIndex);
+    } else {
+      console.warn('[AudioPlayer] 已经是最后一首歌');
     }
   }
 
@@ -268,9 +329,6 @@ class AudioPlayerService {
   }
 
   /**
-   * 释放资源
-   */
-  /**
    * 🔥 修复：应用关闭时释放资源
    */
   async release(): Promise<void> {
@@ -307,6 +365,7 @@ class AudioPlayerService {
     this.state.duration = 0;
     this.notifyListeners();
   }
+
   /**
    * 🔥 新增：重置播放器（用于重新播放）
    */

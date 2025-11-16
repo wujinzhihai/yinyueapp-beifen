@@ -5,6 +5,7 @@ import { MusicItem } from '../models/MusicModels';
 interface CacheData {
   data: string;
   timestamp: number;
+  type: CacheType; // 缓存类型,用于统计
 }
 
 // 🔥 定义 HTTP 请求选项接口
@@ -15,6 +16,20 @@ interface HttpRequestOptions {
   readTimeout: number;
 }
 
+// 🔥 缓存类型枚举
+enum CacheType {
+  MUSIC_URL = 'musicUrl',
+  SEARCH = 'search',
+  LYRIC = 'lyric',
+  PIC = 'pic'
+}
+
+// 🔥 缓存配置接口
+interface CacheConfig {
+  duration: number; // 过期时间(毫秒)
+  maxSize: number;  // 最大条目数
+}
+
 class MusicApiService {
   private static readonly BASE_URL: string = 'https://music-api.gdstudio.xyz/api.php';
   private static readonly DEFAULT_SOURCE: string = 'netease';
@@ -22,10 +37,22 @@ class MusicApiService {
   // 🔥 限流配置
   private static readonly MAX_REQUESTS: number = 60;
   private static readonly TIME_WINDOW: number = 5 * 60 * 1000; // 5分钟
-  private static readonly CACHE_DURATION: number = 10 * 60 * 1000; // 10分钟
 
   private static requestQueue: number[] = [];
   private static cache: Map<string, CacheData> = new Map();
+
+  /**
+   * 🔥 获取缓存配置
+   */
+  private static getCacheConfig(type: CacheType): CacheConfig {
+    const configs: Record<string, CacheConfig> = {
+      'musicUrl': { duration: 3 * 60 * 1000, maxSize: 50 } as CacheConfig,
+      'search': { duration: 30 * 60 * 1000, maxSize: 100 } as CacheConfig,
+      'lyric': { duration: 60 * 60 * 1000, maxSize: 30 } as CacheConfig,
+      'pic': { duration: 60 * 60 * 1000, maxSize: 50 } as CacheConfig
+    };
+    return configs[type as string];
+  }
 
   /**
    * 🔥 检查并等待请求许可
@@ -56,17 +83,84 @@ class MusicApiService {
   }
 
   /**
+   * 🔥 生成缓存key(参数组合而非完整URL)
+   */
+  private static generateCacheKey(type: CacheType, params: Record<string, string>): string {
+    const keys = Object.keys(params);
+    keys.sort();
+    const sortedParams = keys.map((key: string) => `${key}=${params[key]}`).join('&');
+    return `${type as string}:${sortedParams}`;
+  }
+
+  /**
+   * 🔥 检查并清理过期缓存
+   */
+  private static cleanExpiredCache(type: CacheType): void {
+    const now = Date.now();
+    const config = MusicApiService.getCacheConfig(type);
+    const typePrefix = `${type as string}:`;
+    
+    // 删除过期条目
+    const keysToDelete: string[] = [];
+    for (const key of MusicApiService.cache.keys()) {
+      const value = MusicApiService.cache.get(key);
+      if (value && key.startsWith(typePrefix) && now - value.timestamp > config.duration) {
+        keysToDelete.push(key);
+      }
+    }
+    keysToDelete.forEach((key: string) => MusicApiService.cache.delete(key));
+    
+    // 如果超过最大条目数,删除最旧的
+    const typeKeys: string[] = [];
+    for (const key of MusicApiService.cache.keys()) {
+      if (key.startsWith(typePrefix)) {
+        typeKeys.push(key);
+      }
+    }
+    
+    if (typeKeys.length > config.maxSize) {
+      interface KeyTimestamp {
+        key: string;
+        timestamp: number;
+      }
+      
+      const sortedKeys: KeyTimestamp[] = [];
+      typeKeys.forEach((key: string) => {
+        const value = MusicApiService.cache.get(key);
+        if (value) {
+          sortedKeys.push({ key: key, timestamp: value.timestamp } as KeyTimestamp);
+        }
+      });
+      
+      sortedKeys.sort((a: KeyTimestamp, b: KeyTimestamp) => a.timestamp - b.timestamp);
+      
+      const deleteCount = sortedKeys.length - config.maxSize;
+      for (let i = 0; i < deleteCount; i++) {
+        MusicApiService.cache.delete(sortedKeys[i].key);
+      }
+      
+      console.info(`[MusicAPI] 清理 ${type as string} 缓存,删除 ${deleteCount} 条旧数据`);
+    }
+  }
+
+  /**
    * 🔥 HTTP请求封装（带缓存+限流）
    */
-  private static async httpRequest(url: string, options?: HttpRequestOptions): Promise<http.HttpResponse> {
+  private static async httpRequest(
+    url: string,
+    cacheKey: string,
+    cacheType: CacheType,
+    options?: HttpRequestOptions
+  ): Promise<http.HttpResponse> {
     const now: number = Date.now();
+    const config = MusicApiService.getCacheConfig(cacheType);
 
     // 🔥 检查缓存
-    if (MusicApiService.cache.has(url)) {
-      const cached: CacheData = MusicApiService.cache.get(url)!;
-      if (now - cached.timestamp < MusicApiService.CACHE_DURATION) {
+    if (MusicApiService.cache.has(cacheKey)) {
+      const cached: CacheData | undefined = MusicApiService.cache.get(cacheKey);
+      if (cached && now - cached.timestamp < config.duration) {
         console.info('[MusicAPI] 使用缓存，剩余有效期:',
-          Math.ceil((MusicApiService.CACHE_DURATION - (now - cached.timestamp)) / 1000), '秒');
+          Math.ceil((config.duration - (now - cached.timestamp)) / 1000), '秒');
 
         // 🔥 返回模拟的 HttpResponse（补全所有必需属性）
         const mockResponse: http.HttpResponse = {
@@ -89,11 +183,11 @@ class MusicApiService {
           }
         };
         return mockResponse;
-      } else {
-        // 缓存过期，删除
-        MusicApiService.cache.delete(url);
       }
     }
+    
+    // 清理过期缓存
+    MusicApiService.cleanExpiredCache(cacheType);
 
     // 检查频率限制
     await MusicApiService.checkRateLimit();
@@ -118,10 +212,11 @@ class MusicApiService {
         const resultStr: string = response.result as string;
         const cacheData: CacheData = {
           data: resultStr,
-          timestamp: now
+          timestamp: now,
+          type: cacheType
         };
-        MusicApiService.cache.set(url, cacheData);
-        console.info('[MusicAPI] 结果已缓存');
+        MusicApiService.cache.set(cacheKey, cacheData);
+        console.info(`[MusicAPI] ${cacheType} 结果已缓存,key: ${cacheKey.substring(0, 50)}...`);
       }
 
       return response;
@@ -141,8 +236,14 @@ class MusicApiService {
     console.info('[MusicAPI] 获取音频URL');
 
     try {
-      const url: string = `${MusicApiService.BASE_URL}?types=url&source=${source || MusicApiService.DEFAULT_SOURCE}&id=${id}&br=${quality}`;
-      const response: http.HttpResponse = await MusicApiService.httpRequest(url);
+      const params: Record<string, string> = {
+        'source': source || MusicApiService.DEFAULT_SOURCE,
+        'id': id,
+        'br': quality.toString()
+      };
+      const cacheKey = MusicApiService.generateCacheKey(CacheType.MUSIC_URL, params);
+      const url: string = `${MusicApiService.BASE_URL}?types=url&source=${params.source}&id=${params.id}&br=${params.br}`;
+      const response: http.HttpResponse = await MusicApiService.httpRequest(url, cacheKey, CacheType.MUSIC_URL);
 
       if (response.responseCode !== 200) {
         throw new Error(`HTTP ${response.responseCode}`);
@@ -171,8 +272,15 @@ class MusicApiService {
     pages: number = 1
   ): Promise<SearchResult[]> {
     try {
+      const params: Record<string, string> = {
+        'source': source,
+        'keyword': keyword,
+        'count': count.toString(),
+        'pages': pages.toString()
+      };
+      const cacheKey = MusicApiService.generateCacheKey(CacheType.SEARCH, params);
       const url: string = `${MusicApiService.BASE_URL}?types=search&source=${source}&name=${encodeURIComponent(keyword)}&count=${count}&pages=${pages}`;
-      const response: http.HttpResponse = await MusicApiService.httpRequest(url);
+      const response: http.HttpResponse = await MusicApiService.httpRequest(url, cacheKey, CacheType.SEARCH);
 
       if (response.responseCode !== 200) {
         throw new Error(`HTTP ${response.responseCode}`);
@@ -242,8 +350,14 @@ class MusicApiService {
     size: number = 300
   ): Promise<string> {
     try {
+      const params: Record<string, string> = {
+        'source': source,
+        'id': picId,
+        'size': size.toString()
+      };
+      const cacheKey = MusicApiService.generateCacheKey(CacheType.PIC, params);
       const url: string = `${MusicApiService.BASE_URL}?types=pic&source=${source}&id=${picId}&size=${size}`;
-      const response: http.HttpResponse = await MusicApiService.httpRequest(url);
+      const response: http.HttpResponse = await MusicApiService.httpRequest(url, cacheKey, CacheType.PIC);
 
       if (response.responseCode !== 200) {
         throw new Error(`HTTP ${response.responseCode}`);
@@ -270,8 +384,13 @@ class MusicApiService {
     lyricId: string
   ): Promise<LyricResult> {
     try {
+      const params: Record<string, string> = {
+        'source': source,
+        'id': lyricId
+      };
+      const cacheKey = MusicApiService.generateCacheKey(CacheType.LYRIC, params);
       const url: string = `${MusicApiService.BASE_URL}?types=lyric&source=${source}&id=${lyricId}`;
-      const response: http.HttpResponse = await MusicApiService.httpRequest(url);
+      const response: http.HttpResponse = await MusicApiService.httpRequest(url, cacheKey, CacheType.LYRIC);
 
       if (response.responseCode !== 200) {
         throw new Error(`HTTP ${response.responseCode}`);
@@ -325,9 +444,29 @@ class MusicApiService {
    * 🔥 获取缓存统计
    */
   static getCacheStats(): CacheStats {
+    const typeStats: Record<string, number> = {};
+    
+    for (const key of MusicApiService.cache.keys()) {
+      const value = MusicApiService.cache.get(key);
+      if (value) {
+        const type = value.type as string;
+        if (typeStats[type]) {
+          typeStats[type] = typeStats[type] + 1;
+        } else {
+          typeStats[type] = 1;
+        }
+      }
+    }
+    
+    const urlArray: string[] = [];
+    for (const key of MusicApiService.cache.keys()) {
+      urlArray.push(key);
+    }
+    
     const stats: CacheStats = {
       size: MusicApiService.cache.size,
-      urls: Array.from(MusicApiService.cache.keys())
+      urls: urlArray,
+      byType: typeStats
     };
     return stats;
   }
@@ -378,6 +517,7 @@ export interface LyricResult {
 export interface CacheStats {
   size: number;
   urls: string[];
+  byType?: Record<string, number>; // 按类型统计
 }
 
 // 导出类型别名

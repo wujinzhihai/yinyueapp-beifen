@@ -22,6 +22,9 @@
         "startWindowIcon": "$media:startIcon",
         "startWindowBackground": "$color:start_window_background",
         "exported": true,
+        "backgroundModes": [
+          "audioPlayback"
+        ],
         "skills": [
           {
             "entities": [
@@ -36,14 +39,17 @@
     ],
     "requestPermissions": [
       {
-        "name": "ohos.permission.INTERNET",
-        "reason": "$string:internet_permission_reason",
+        "name": "ohos.permission.KEEP_BACKGROUND_RUNNING",
+        "reason": "$string:keep_background_running_reason",
         "usedScene": {
           "abilities": [
             "EntryAbility"
           ],
-          "when": "always"
+          "when": "inuse"
         }
+      },
+      {
+        "name": "ohos.permission.INTERNET"
       }
     ]
   }

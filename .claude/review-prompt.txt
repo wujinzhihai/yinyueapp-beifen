@@ -1,0 +1,43 @@
+[TASK_MARKER: 20251116-REVIEW-HMOS]
+
+目标：对 HarmonyOS 音乐播放器项目进行深度代码审查
+
+任务描述：
+作为 Codex 分析AI，请对以下项目进行全面的代码质量审查：
+
+项目路径：D:\Ahmxt\yinyueapp
+
+核心文件：
+1. entry/src/main/ets/services/AudioPlayerService.ets - 音频播放服务
+2. entry/src/main/ets/pages/Index.ets - 主页面
+3. entry/src/main/ets/pages/PlayerPage.ets - 播放器页面
+4. entry/src/main/ets/services/MusicApiService.ets - API 服务
+5. entry/src/main/ets/models/ - 数据模型
+
+审查维度：
+1. 代码质量（SOLID 原则、DRY、代码复杂度）
+2. HarmonyOS 最佳实践（ArkTS 规范、AVPlayer 使用、状态管理）
+3. 架构设计（服务层、页面层、模型层分离）
+4. 错误处理（异常捕获、用户提示、降级策略）
+5. 性能优化（内存泄漏、定时器清理、资源释放）
+6. 安全性（API 调用、数据验证）
+7. 可维护性（注释、命名、模块化）
+
+输出要求：
+1. 生成 .claude/review-report.md 审查报告
+2. 包含以下内容：
+   - 技术维度评分（代码质量、测试覆盖、规范遵循）0-100分
+   - 战略维度评分（需求匹配、架构一致、风险评估）0-100分
+   - 综合评分 0-100分
+   - 明确建议（通过/退回/需讨论）
+   - 发现的问题列表（按严重程度分类：严重/中等/轻微）
+   - 优化建议（具体可执行的改进方案）
+   - 风险评估（潜在的技术债务和隐患）
+
+约束：
+- 所有分析必须基于实际代码，不得猜测
+- 提供具体的代码位置（文件名:行号）
+- 优先关注 HarmonyOS 特有的问题
+- 评分标准要严格且有依据
+
+请在响应末尾附加：[CONVERSATION_ID]: <conversationId>
