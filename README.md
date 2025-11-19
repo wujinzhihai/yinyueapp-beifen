@@ -15,6 +15,12 @@
 - 🎵 **完整功能**：支持音乐搜索、播放、歌词显示、播放列表等
 - ⚡ **性能优化**：智能缓存、状态管理、内存优化
 
+## ⚠️ 免责声明
+
+1. 本应用使用第三方音乐API ([GD音乐台](https://music.gdstudio.xyz))
+2. 仅供学习交流使用
+3. 请支持正版音乐
+
 ## 🙏 致谢
 
 ### 音乐 API 来源
@@ -23,12 +29,17 @@
 
 - 🔗 API 地址：https://music.gdstudio.xyz
 - 📺 如遇问题可 B站私信：**GD-Studio**
-- ⚠️ 请尊重 API 作者的劳动成果，合理使用
+- ⚠️ 请尊重作者的劳动成果，合理使用
+
+### AI工具使用
+- 1.使用Visual Studio Code拓展市场搜索并安装“Roo Code”
+- 2.Roo Code使用“Base URL” (基础 URL) 选项
+- 3.此URL服务来自 **[LINUX DO](https://linux.do/latest)** 感谢其大力支持
 
 ## ✨ 主要功能
 
 ### 🎼 音乐播放
-- ✅ 在线搜索音乐（支持网易云音乐）
+- ✅ 在线搜索音乐(有5分钟内60次访问限制)
 - ✅ 播放/暂停/上一曲/下一曲
 - ✅ 进度条拖动
 - ✅ 多音质切换（标准/较高/高品/无损）
@@ -56,7 +67,7 @@
 
 - **操作系统**：HarmonyOS NEXT
 - **编程语言**：ArkTS (TypeScript 的超集)
-- **开发工具**：DevEco Studio
+- **开发工具**：DevEco Studio  DevEco Studio
 - **架构模式**：MVVM
 - **状态管理**：AppStorage + @StorageLink
 - **网络请求**：@ohos.net.http
