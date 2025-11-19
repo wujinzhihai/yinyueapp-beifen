@@ -315,7 +315,17 @@ struct Index {
                         }
                         .alignItems(HorizontalAlign.Start)
                         .onClick(() => {
-                          this.searchFromHome(playlist.keywords[0]);
+                          // 跳转到歌单详情页
+                          router.pushUrl({
+                            url: 'pages/PlaylistDetailPage',
+                            params: {
+                              name: playlist.name,
+                              description: playlist.description,
+                              cover: playlist.cover,
+                              keywords: playlist.keywords,
+                              songs: playlist.songs
+                            }
+                          });
                         })
                       }
                     }, (playlist: PlaylistItem) => playlist.id)
@@ -441,21 +451,16 @@ struct Index {
                           .width(60)
                           .height(60)
                           .margin({ right: 12 })
-
-                        Row() {
-                          if (this.currentSong && this.currentSong.id === item.id && this.playState === PlayState.PLAYING) {
-                            Text('♫')
-                              .fontSize(16)
-                              .fontColor('#FF6B6B')
-                              .fontWeight(FontWeight.Bold)
-                              .margin({ right: 8 })
-                          }
-                          Text(`${index + 1}`)
-                            .fontSize(14)
-                            .fontColor('#999999')
+  
+                        // 播放状态图标
+                        if (this.currentSong && this.currentSong.id === item.id && this.playState === PlayState.PLAYING) {
+                          Text('♫')
+                            .fontSize(20)
+                            .fontColor('#FF6B6B')
+                            .fontWeight(FontWeight.Bold)
+                            .margin({ right: 12 })
                         }
-                        .width(40)
-
+  
                         Column() {
                           Text(item.name)
                             .fontSize(16)

@@ -64,24 +64,57 @@ struct PlayerPage {
   private rotationTimer: number = -1;
   private rotationId: number = 0;
   private lastSongId: string = '';  // 🔥 记录上一首歌曲ID,防止重复触发
+  private isInitializing: boolean = true;  // 🔥 标记是否正在初始化
 
-  aboutToAppear(): void {
+  async aboutToAppear(): Promise<void> {
     console.info('[PlayerPage] ===== 页面加载 =====');
     console.info('[PlayerPage] 当前歌曲:', this.currentSong?.name);
     console.info('[PlayerPage] 播放状态:', this.playState);
     console.info('[PlayerPage] 当前索引:', this.currentIndex);
 
-    // 🔥 修复：延迟检查播放状态,确保 AppStorage 已同步
+    // 🔥 记录当前歌曲ID,避免onSongChange重复处理
+    this.lastSongId = this.currentSong?.id || '';
+
+    // 🔥 立即加载封面
+    if (this.currentSong?.picId && this.currentSong?.source) {
+      try {
+        const coverUrl = await MusicApiService.getPicUrl(
+          this.currentSong.source,
+          this.currentSong.picId,
+          500
+        );
+        console.info('[PlayerPage] 初始封面加载成功');
+        this.coverUrl = coverUrl;
+      } catch (error) {
+        const err = error as Error;
+        console.error('[PlayerPage] 初始封面加载失败:', err.message);
+        this.coverUrl = '';
+      }
+    }
+
+    // 🔥 加载歌词
+    await this.loadLyrics();
+
+    // 🔥 延迟初始化,确保状态同步完成
     setTimeout(() => {
-      console.info('[PlayerPage] 延迟检查播放状态:', this.playState);
+      this.isInitializing = false;
+      console.info('[PlayerPage] 初始化完成,播放状态:', this.playState);
+      
+      // 如果正在播放,启动旋转
       if (this.playState === PlayState.PLAYING && this.currentSong) {
         console.info('[PlayerPage] 页面加载时启动旋转');
         this.startRotation();
       }
-    }, 300);
+    }, 100);
   }
 
   async onSongChange(): Promise<void> {
+    // 🔥 初始化期间跳过处理
+    if (this.isInitializing) {
+      console.info('[PlayerPage] 初始化期间,跳过onSongChange');
+      return;
+    }
+
     // 🔥 防止重复触发
     const currentSongId = this.currentSong?.id || '';
     if (currentSongId === this.lastSongId) {

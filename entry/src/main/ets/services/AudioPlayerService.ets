@@ -54,7 +54,10 @@ class AudioPlayerService {
   private maxRetries: number = 1; // 🔄 最大重试次数
 
   private constructor() {
-    this.initAVSession();
+    // 延迟初始化AVSession,等待context设置
+    setTimeout(() => {
+      this.initAVSession();
+    }, 500);
   }
 
   static getInstance(): AudioPlayerService {
@@ -113,7 +116,11 @@ class AudioPlayerService {
       // 从AppStorage获取上下文
       const context = AppStorage.get('abilityContext') as Context;
       if (!context) {
-        console.error('[AVSession] 无法获取abilityContext');
+        console.error('[AVSession] 无法获取abilityContext,延迟重试');
+        // 延迟重试
+        setTimeout(() => {
+          this.initAVSession();
+        }, 1000);
         return;
       }
 
