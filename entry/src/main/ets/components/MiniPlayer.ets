@@ -93,35 +93,14 @@ export struct MiniPlayer {
   }
 
   build() {
-    if (this.currentSong) {
-      Row() {
-        // 封面 - 圆形持续旋转
-        if (this.coverUrl) {
-          Image(this.coverUrl)
-            .width(50)
-            .height(50)
-            .borderRadius(25)
-            .backgroundColor('#F0F0F0')
-            .rotate({
-              x: 0,
-              y: 0,
-              z: 1,
-              angle: this.rotateAngle
-            })
-            .onClick(() => {
-              this.openPlayerPage();
-            })
-        } else {
-          Column() {
-            Text('🎵')
-              .fontSize(20)
-              .opacity(0.5)
-          }
+    Row() {
+      // 封面 - 圆形持续旋转
+      if (this.currentSong && this.coverUrl) {
+        Image(this.coverUrl)
           .width(50)
           .height(50)
           .borderRadius(25)
           .backgroundColor('#F0F0F0')
-          .justifyContent(FlexAlign.Center)
           .rotate({
             x: 0,
             y: 0,
@@ -129,60 +108,87 @@ export struct MiniPlayer {
             angle: this.rotateAngle
           })
           .onClick(() => {
-            this.openPlayerPage();
+            if (this.currentSong) {
+              this.openPlayerPage();
+            }
           })
-        }
-
-        // 歌曲信息
+      } else {
         Column() {
-          Text(this.currentSong.name)
-            .fontSize(15)
-            .fontWeight(FontWeight.Medium)
-            .maxLines(1)
-            .textOverflow({ overflow: TextOverflow.Ellipsis })
-            .width('100%')
-
-          Text(this.currentSong.artist)
-            .fontSize(12)
-            .fontColor('#999999')
-            .maxLines(1)
-            .textOverflow({ overflow: TextOverflow.Ellipsis })
-            .margin({ top: 4 })
-            .width('100%')
-        }
-        .layoutWeight(1)
-        .margin({ left: 12, right: 12 })
-        .alignItems(HorizontalAlign.Start)
-        .onClick(() => {
-          this.openPlayerPage();
-        })
-
-        // 播放/暂停按钮
-        Button({ type: ButtonType.Circle }) {
-          Text(this.playState === PlayState.PLAYING ? '⏸' : '▶')
+          Text('🎵')
             .fontSize(20)
-            .fontColor('#FFFFFF')
+            .opacity(0.5)
         }
-        .width(44)
-        .height(44)
-        .backgroundColor('#FF6B6B')
+        .width(50)
+        .height(50)
+        .borderRadius(25)
+        .backgroundColor('#F0F0F0')
+        .justifyContent(FlexAlign.Center)
+        .rotate({
+          x: 0,
+          y: 0,
+          z: 1,
+          angle: this.rotateAngle
+        })
         .onClick(() => {
-          this.togglePlay();
+          if (this.currentSong) {
+            this.openPlayerPage();
+          }
         })
       }
-      .width('100%')
-      .height(70)
-      .padding({ left: 16, right: 16 })
-      .backgroundColor('#FFFFFF')
-      .shadow({
-        radius: 12,
-        color: '#1A000000',
-        offsetY: -4
+
+      // 歌曲信息
+      Column() {
+        Text(this.currentSong ? this.currentSong.name : '暂无播放')
+          .fontSize(15)
+          .fontWeight(FontWeight.Medium)
+          .maxLines(1)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+          .width('100%')
+
+        Text(this.currentSong ? this.currentSong.artist : '点击搜索歌曲')
+          .fontSize(12)
+          .fontColor('#999999')
+          .maxLines(1)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+          .margin({ top: 4 })
+          .width('100%')
+      }
+      .layoutWeight(1)
+      .margin({ left: 12, right: 12 })
+      .alignItems(HorizontalAlign.Start)
+      .onClick(() => {
+        if (this.currentSong) {
+          this.openPlayerPage();
+        }
       })
-      .border({
-        width: { top: 1 },
-        color: '#F0F0F0'
+
+      // 播放/暂停按钮
+      Button({ type: ButtonType.Circle }) {
+        Text(this.playState === PlayState.PLAYING ? '⏸' : '▶')
+          .fontSize(20)
+          .fontColor('#FFFFFF')
+      }
+      .width(44)
+      .height(44)
+      .backgroundColor(this.currentSong ? '#FF6B6B' : '#CCCCCC')
+      .onClick(() => {
+        if (this.currentSong) {
+          this.togglePlay();
+        }
       })
     }
+    .width('100%')
+    .height(70)
+    .padding({ left: 16, right: 16 })
+    .backgroundColor('#FFFFFF')
+    .shadow({
+      radius: 12,
+      color: '#1A000000',
+      offsetY: -4
+    })
+    .border({
+      width: { top: 1 },
+      color: '#F0F0F0'
+    })
   }
 }

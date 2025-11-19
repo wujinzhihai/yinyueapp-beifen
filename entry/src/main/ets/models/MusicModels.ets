@@ -11,6 +11,7 @@ export interface MusicItem {
   source: string;
   picId?: string;
   lyricId?: string;
+  localPath?: string; // 本地音乐文件路径
 }
 
 export interface ISong {

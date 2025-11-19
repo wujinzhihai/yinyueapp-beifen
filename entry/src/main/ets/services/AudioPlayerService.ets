@@ -123,8 +123,17 @@ class AudioPlayerService {
       this.state.playState = PlayState.LOADING;
       this.notifyListeners();
 
-      const url = await MusicApiService.getMusicUrl(song.source, song.id, this.quality);
-      console.info('[AudioPlayer] 获取音频URL成功');
+      // 🔥 根据音乐来源获取播放URL
+      let url: string;
+      if (song.source === 'local') {
+        // 本地音乐使用文件路径
+        url = `file://${song.localPath}`;
+        console.info('[AudioPlayer] 使用本地文件:', url);
+      } else {
+        // 网络音乐获取URL
+        url = await MusicApiService.getMusicUrl(song.source, song.id, this.quality);
+        console.info('[AudioPlayer] 获取网络音频URL成功');
+      }
 
       await this.initPlayer(url);
 

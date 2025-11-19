@@ -117,7 +117,7 @@ yinyueapp-beifen/
 - **HarmonyOS SDK**: API 12 或更高版本
 - **Node.js**: 18.x 或更高版本
 
-### 安装步骤
+### 安装步骤entry/build/default/outputs/default/
 
 1. **克隆项目**
 ```bash

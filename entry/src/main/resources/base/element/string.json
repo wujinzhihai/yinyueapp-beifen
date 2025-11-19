@@ -15,6 +15,18 @@
     {
       "name": "internet_permission_reason",
       "value": "用于搜索和播放在线音乐"
+    },
+    {
+      "name": "keep_background_running_reason",
+      "value": "用于后台播放音乐"
+    },
+    {
+      "name": "permission_read_media",
+      "value": "需要读取本地音乐文件"
+    },
+    {
+      "name": "permission_write_media",
+      "value": "需要写入音乐文件信息"
     }
   ]
 }
