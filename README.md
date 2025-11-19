@@ -40,10 +40,18 @@
 
 ### 🎼 音乐播放
 - ✅ 在线搜索音乐(有5分钟内60次访问限制)
+- ✅ 本地音乐播放
 - ✅ 播放/暂停/上一曲/下一曲
 - ✅ 进度条拖动
 - ✅ 多音质切换（标准/较高/高品/无损）
 - ✅ 播放列表管理
+
+### 🎵 后台播放
+- ✅ 应用切换到后台继续播放
+- ✅ 通知栏音乐控制器
+- ✅ 锁屏界面音乐控制
+- ✅ 媒体会话(AVSession)支持
+- ✅ 播放/暂停/上一曲/下一曲控制
 
 ### 🎤 歌词显示
 - ✅ 实时歌词滚动
@@ -56,6 +64,7 @@
 - ✅ 迷你播放器
 - ✅ 响应式布局
 - ✅ 流畅的页面切换
+- ✅ 搜索结果页
 
 ### ⚡ 性能优化
 - ✅ 智能缓存策略（缓存命中率 75-85%）
@@ -72,6 +81,8 @@
 - **状态管理**：AppStorage + @StorageLink
 - **网络请求**：@ohos.net.http
 - **音频播放**：@ohos.multimedia.media
+- **媒体会话**：@ohos.multimedia.avsession
+- **后台任务**：backgroundModes: audioPlayback
 
 ## 📦 项目结构
 
@@ -87,8 +98,9 @@ yinyueapp-beifen/
 │   │   ├── PlayerPage.ets   # 播放器页面
 │   │   └── SearchPage.ets   # 搜索页面
 │   ├── services/            # 服务层
-│   │   ├── AudioPlayerService.ets  # 音频播放服务
-│   │   └── MusicApiService.ets     # 音乐API服务
+│   │   ├── AudioPlayerService.ets  # 音频播放服务(含AVSession)
+│   │   ├── MusicApiService.ets     # 音乐API服务
+│   │   └── LocalMusicService.ets   # 本地音乐服务
 │   ├── utils/               # 工具类
 │   │   ├── TimeUtil.ets     # 时间格式化
 │   │   ├── ErrorHandler.ets # 错误处理
@@ -164,7 +176,19 @@ cd yinyueapp-beifen
    - 歌词会随播放进度自动滚动
    - 当前播放的歌词会高亮显示
 
-4. **切换音质**
+4. **本地音乐**
+   - 切换到"本地音乐"标签页
+   - 自动扫描设备音乐文件
+   - 支持搜索、编辑、删除
+   - 详细说明: [LOCAL_MUSIC_GUIDE.md](LOCAL_MUSIC_GUIDE.md)
+
+5. **后台播放**
+   - 切换应用或锁屏时音乐继续播放
+   - 通知栏显示播放控制器
+   - 支持通知栏控制播放
+   - 详细说明: [BACKGROUND_PLAYBACK_GUIDE.md](BACKGROUND_PLAYBACK_GUIDE.md)
+
+6. **切换音质**
    - 点击右上角音质按钮
    - 选择标准/较高/高品/无损
 
@@ -204,19 +228,30 @@ cd yinyueapp-beifen
 
 - [ ] 部分歌曲可能因版权问题无法播放
 - [ ] API 有频率限制（5分钟60次）
-- [ ] 歌词高亮偶尔会有延迟
+- [ ] 通知栏封面图片需要PixelMap格式(待优化)
 
 ## 🔮 未来计划
 
-- [ ] 支持本地音乐播放
+- [x] 支持本地音乐播放 ✅
+- [x] 后台播放功能 ✅
+- [x] 通知栏音乐控制 ✅
 - [ ] 添加播放历史记录
 - [ ] 支持歌单收藏
 - [ ] 添加夜间模式
 - [ ] 支持更多音乐平台
+- [ ] 优化通知栏封面显示
 
 ## 📄 开源协议
 
 本项目采用 [MIT](LICENSE) 协议开源。
+
+## 📚 相关文档
+
+- [安装指南](INSTALL.md) - HAP安装包安装教程
+- [本地音乐使用指南](LOCAL_MUSIC_GUIDE.md) - 本地音乐功能说明
+- [后台播放指南](BACKGROUND_PLAYBACK_GUIDE.md) - 后台播放和通知栏控制
+- [发布指南](GITHUB_RELEASE_GUIDE.md) - GitHub Release发布教程
+- [更新日志](RELEASE_NOTES.md) - 版本更新记录
 
 ## 📮 联系方式
 

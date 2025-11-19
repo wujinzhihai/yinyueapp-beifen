@@ -7,11 +7,17 @@
  * - 播放失败自动重试和跳过
  * - 状态管理和AppStorage同步
  * - 订阅/取消订阅机制
+ * - AVSession媒体会话支持
+ * - 通知栏音乐控制
+ * - 后台播放支持
  */
 
 import media from '@ohos.multimedia.media';
+import avSession from '@ohos.multimedia.avsession';
+import image from '@ohos.multimedia.image';
 import MusicApiService from './MusicApiService';
 import { MusicItem, PlayState, PlayMode } from '../models/MusicModels';
+import { BusinessError } from '@ohos.base';
 
 export { PlayState, PlayMode };
 
@@ -30,6 +36,7 @@ type StateListener = (state: PlayerState) => void;
 class AudioPlayerService {
   private static instance: AudioPlayerService | null = null;
   private avPlayer: media.AVPlayer | null = null;
+  private session: avSession.AVSession | null = null; // 🎵 媒体会话
   private state: PlayerState = {
     currentSong: null,
     playState: PlayState.IDLE,
@@ -46,7 +53,9 @@ class AudioPlayerService {
   private retryCount: number = 0; // 🔄 重试计数器
   private maxRetries: number = 1; // 🔄 最大重试次数
 
-  private constructor() {}
+  private constructor() {
+    this.initAVSession();
+  }
 
   static getInstance(): AudioPlayerService {
     if (!AudioPlayerService.instance) {
@@ -97,6 +106,155 @@ class AudioPlayerService {
   }
 
   /**
+   * 🎵 初始化AVSession媒体会话
+   */
+  private async initAVSession(): Promise<void> {
+    try {
+      // 从AppStorage获取上下文
+      const context = AppStorage.get('abilityContext') as Context;
+      if (!context) {
+        console.error('[AVSession] 无法获取abilityContext');
+        return;
+      }
+
+      // 创建媒体会话
+      this.session = await avSession.createAVSession(
+        context,
+        'MusicPlayer',
+        'audio'
+      );
+      
+      console.info('[AVSession] 媒体会话创建成功');
+
+      // 激活会话
+      await this.session.activate();
+      console.info('[AVSession] 媒体会话已激活');
+
+      // 监听播放控制命令
+      this.session.on('play', () => {
+        console.info('[AVSession] 收到播放命令');
+        this.togglePlay();
+      });
+
+      this.session.on('pause', () => {
+        console.info('[AVSession] 收到暂停命令');
+        this.togglePlay();
+      });
+
+      this.session.on('stop', () => {
+        console.info('[AVSession] 收到停止命令');
+        this.togglePlay();
+      });
+
+      this.session.on('playNext', () => {
+        console.info('[AVSession] 收到下一曲命令');
+        this.next();
+      });
+
+      this.session.on('playPrevious', () => {
+        console.info('[AVSession] 收到上一曲命令');
+        this.previous();
+      });
+
+      this.session.on('seek', (time: number) => {
+        console.info('[AVSession] 收到跳转命令:', time);
+        this.seek(time / 1000);
+      });
+
+    } catch (error) {
+      const err = error as BusinessError;
+      console.error('[AVSession] 初始化失败:', err.code, err.message);
+    }
+  }
+
+  /**
+   * 🎵 更新媒体会话元数据
+   */
+  private async updateAVMetadata(): Promise<void> {
+    if (!this.session || !this.state.currentSong) {
+      return;
+    }
+
+    try {
+      const metadata: avSession.AVMetadata = {
+        assetId: this.state.currentSong.id,
+        title: this.state.currentSong.name,
+        artist: this.state.currentSong.artist,
+        album: this.state.currentSong.album || '未知专辑',
+        duration: this.state.duration * 1000,
+      };
+
+      // 如果有封面图片,添加封面
+      if (this.state.currentSong.picId && this.state.currentSong.source) {
+        try {
+          const coverUrl = await MusicApiService.getPicUrl(
+            this.state.currentSong.source,
+            this.state.currentSong.picId,
+            200
+          );
+          
+          // 注意: HarmonyOS需要PixelMap格式的图片
+          // 这里简化处理,实际项目中需要将URL转换为PixelMap
+          metadata.mediaImage = coverUrl;
+        } catch (error) {
+          console.error('[AVSession] 获取封面失败:', error);
+        }
+      }
+
+      await this.session.setAVMetadata(metadata);
+      console.info('[AVSession] 元数据已更新');
+    } catch (error) {
+      const err = error as BusinessError;
+      console.error('[AVSession] 更新元数据失败:', err.code, err.message);
+    }
+  }
+
+  /**
+   * 🎵 更新播放状态
+   */
+  private async updateAVPlaybackState(): Promise<void> {
+    if (!this.session) {
+      return;
+    }
+
+    try {
+      const playbackState: avSession.AVPlaybackState = {
+        state: this.convertPlayState(this.state.playState),
+        position: {
+          elapsedTime: this.state.currentTime * 1000,
+          updateTime: Date.now()
+        },
+        speed: this.state.playState === PlayState.PLAYING ? 1.0 : 0.0,
+        loopMode: avSession.LoopMode.LOOP_MODE_SEQUENCE,
+      };
+
+      await this.session.setAVPlaybackState(playbackState);
+      console.info('[AVSession] 播放状态已更新');
+    } catch (error) {
+      const err = error as BusinessError;
+      console.error('[AVSession] 更新播放状态失败:', err.code, err.message);
+    }
+  }
+
+  /**
+   * 🎵 转换播放状态
+   */
+  private convertPlayState(state: PlayState): avSession.PlaybackState {
+    switch (state) {
+      case PlayState.PLAYING:
+        return avSession.PlaybackState.PLAYBACK_STATE_PLAY;
+      case PlayState.PAUSED:
+        return avSession.PlaybackState.PLAYBACK_STATE_PAUSE;
+      case PlayState.LOADING:
+        return avSession.PlaybackState.PLAYBACK_STATE_PREPARE;
+      case PlayState.ERROR:
+        return avSession.PlaybackState.PLAYBACK_STATE_ERROR;
+      default:
+        return avSession.PlaybackState.PLAYBACK_STATE_STOP;
+    }
+  }
+
+  /**
    * 🔥 核心修复：播放歌曲（带播放锁保护和重试机制）
    */
   async play(song: MusicItem, playlist: MusicItem[], index: number, isRetry: boolean = false): Promise<void> {
@@ -139,6 +297,10 @@ class AudioPlayerService {
 
       this.state.playState = PlayState.PLAYING;
       this.notifyListeners();
+      
+      // 🎵 更新媒体会话
+      await this.updateAVMetadata();
+      await this.updateAVPlaybackState();
       
       // 🔄 播放成功,重置重试计数器
       this.retryCount = 0;
@@ -318,6 +480,9 @@ class AudioPlayerService {
         this.startUpdateTimer();
       }
       this.notifyListeners();
+      
+      // 🎵 更新播放状态
+      await this.updateAVPlaybackState();
     } catch (error) {
       console.error('[AudioPlayer] 切换播放状态失败:', error);
     }
@@ -398,6 +563,19 @@ class AudioPlayerService {
     console.info('[AudioPlayer] 释放资源');
 
     this.stopUpdateTimer();
+
+    // 释放媒体会话
+    if (this.session) {
+      try {
+        await this.session.deactivate();
+        await this.session.destroy();
+        console.info('[AVSession] 媒体会话已释放');
+      } catch (error) {
+        console.error('[AVSession] 释放媒体会话失败:', error);
+      } finally {
+        this.session = null;
+      }
+    }
 
     if (this.avPlayer) {
       try {
