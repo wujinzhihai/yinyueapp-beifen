@@ -150,7 +150,7 @@ export struct MinePage {
           .color('#F0F0F0')
 
         this.SettingItem('ℹ️', '关于应用', () => {
-          promptAction.showToast({ message: 'HarmonyOS音乐应用 v1.0.0' });
+          this.showAboutDialog();
         })
       }
       .width('90%')
@@ -169,6 +169,21 @@ export struct MinePage {
     .width('100%')
     .height('100%')
     .backgroundColor('#F5F5F5')
+  }
+
+  showAboutDialog() {
+    promptAction.showDialog({
+      title: '关于应用',
+      message: `HarmonyOS音乐应用 v1.0.0
+
+开发者: wujinzhihai
+
+GitHub: https://github.com/wujinzhihai
+邮箱: wanla13258@Gmail.com`,
+      buttons: [
+        { text: '关闭', color: '#FF6B6B' }
+      ]
+    });
   }
 
   @Builder

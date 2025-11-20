@@ -7,6 +7,9 @@
  * - 搜索结果覆盖层(无导航栏)
  * - 底部迷你播放器
  * - 底部导航栏(首页/本地音乐/我的)
+ *
+ * @author wujinzhihai
+ * @github https://github.com/wujinzhihai
  */
 
 import { MusicItem } from '../services/MusicApiService';

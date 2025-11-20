@@ -8,6 +8,9 @@
  * - 获取封面图片
  * - 智能缓存策略(分类缓存+自动过期)
  * - API频率限流(5分钟60次)
+ *
+ * @author wujinzhihai
+ * @github https://github.com/wujinzhihai
  */
 
 import http from '@ohos.net.http';

@@ -6,6 +6,9 @@
  * - 解析音频文件信息
  * - 提供本地音乐搜索
  * - 管理本地音乐列表
+ *
+ * @author wujinzhihai
+ * @github https://github.com/wujinzhihai
  */
 
 import fileIo from '@ohos.file.fs';

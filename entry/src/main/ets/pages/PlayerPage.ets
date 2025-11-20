@@ -8,6 +8,9 @@
  * - 进度条拖动
  * - 音质切换
  * - 播放列表显示
+ *
+ * @author wujinzhihai
+ * @github https://github.com/wujinzhihai
  */
 
 import MusicApiService, { MusicItem } from '../services/MusicApiService';

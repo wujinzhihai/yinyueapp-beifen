@@ -1,3 +1,18 @@
+/**
+ * 🚀 应用入口能力
+ *
+ * 功能: 应用生命周期管理
+ * - onCreate: 应用创建
+ * - onDestroy: 应用销毁
+ * - onWindowStageCreate: 窗口阶段创建
+ * - onWindowStageDestroy: 窗口阶段销毁
+ * - onForeground: 应用前台
+ * - onBackground: 应用后台
+ *
+ * @author wujinzhihai
+ * @github https://github.com/wujinzhihai
+ */
+
 import UIAbility from '@ohos.app.ability.UIAbility';
 import hilog from '@ohos.hilog';
 import window from '@ohos.window';

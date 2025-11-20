@@ -10,6 +10,9 @@
  * - AVSession媒体会话支持
  * - 通知栏音乐控制
  * - 后台播放支持
+ *
+ * @author wujinzhihai
+ * @github https://github.com/wujinzhihai
  */
 
 import media from '@ohos.multimedia.media';

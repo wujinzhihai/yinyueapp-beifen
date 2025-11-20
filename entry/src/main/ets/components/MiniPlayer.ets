@@ -6,6 +6,9 @@
  * - 显示封面图片(带旋转动画)
  * - 播放/暂停控制
  * - 点击跳转到完整播放页面
+ *
+ * @author wujinzhihai
+ * @github https://github.com/wujinzhihai
  */
 
 import { MusicItem } from '../models/MusicModels';
